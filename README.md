@@ -11,5 +11,3 @@ neo4j-admin load --from=databases\graph.db.dump --database=graph.db --force
 python app.py
 ```
 **注意**：运行之前需要修改`app.py`的`neo4j`账号和密码为运行环境的账号密码，并且需要修改`app.y`当中的`API_KEY`为自己的openai key，以便于ChatGPT的调用。
-
-在`邓智杰毕业设计文档.pdf`当中也详细描述了关键代码的逻辑。
