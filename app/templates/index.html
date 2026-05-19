@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>刑事知识图谱检索</title>
+  <script src="https://unpkg.com/cytoscape@3.19.1/dist/cytoscape.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f7f9fc;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 40px;
+    }
+    .search-container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 0 auto 30px auto;
+      text-align: center;
+    }
+    #searchBox {
+      width: 60%;
+      padding: 10px;
+      margin-right: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #cy {
+      width: 100%;
+      height: 600px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="search-container">
+    <h2>🔍 刑事知识图谱检索</h2>
+    <input id="searchBox" type="text" placeholder="请输入关键词，如 人名 / 案件号 / 法院等">
+    <input id="limitBox" type="number" placeholder="最多节点数" value="10" min="1" style="width: 100px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-left: 10px;">
+    <button onclick="search()">搜索</button>
+  </div>
+  <!-- 新的左右布局：左图谱，右文字 -->
+<!-- 图谱 + 描述区域 -->
+<div class="container-fluid">
+  <div class="row">
+    <!-- 左图谱区域 -->
+    <div class="col-md-8 mb-4">
+      <div class="card shadow-sm" style="border-radius: 16px;">
+        <div class="card-header bg-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+          <h5 class="mb-0">🧠 知识图谱展示</h5>
+        </div>
+        <div class="card-body" style="height: 600px; padding: 0;">
+          <div id="cy" style="width: 100%; height: 100%; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右边 LLM 智能总结 -->
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm" style="border-radius: 16px; height: 100%;">
+        <div class="card-header bg-white d-flex align-items-center" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+          <span style="font-size: 1.5rem; margin-right: 10px;">🤖</span>
+          <h5 class="mb-0">大模型智能总结</h5>
+        </div>
+        <div class="card-body" id="description" style="white-space: pre-wrap; overflow-y: auto; max-height: 550px; font-size: 15px; line-height: 1.6;">
+          <em>图谱摘要将在此处展示...</em>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script>
+    function search() {
+  const q = document.getElementById('searchBox').value.trim();
+  const limit = parseInt(document.getElementById('limitBox').value) || 10;
+  if (!q) return;
+
+  fetch(`/search?q=${encodeURIComponent(q)}&limit=${limit}`)
+    .then(response => response.json())
+    .then(data => {
+      // 显示图谱
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          ...data.nodes.map(n => ({ data: { id: n.id, label: n.label } })),
+          ...data.links.map(e => ({ data: { source: e.source, target: e.target, label: e.label } }))
+        ],
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'text-valign': 'center',
+              'color': '#333',
+              'background-color': '#6FB1FC',
+              'border-width': 2,
+              'border-color': '#0366d6',
+              'font-size': '12px'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'label': 'data(label)',
+              'font-size': '10px',
+              'curve-style': 'bezier',
+              'target-arrow-shape': 'triangle',
+              'line-color': '#ccc',
+              'target-arrow-color': '#ccc'
+            }
+          }
+        ],
+        layout: {
+          name: 'cose',
+          animate: true
+        }
+      });
+
+      // 显示描述
+      document.getElementById("description").innerText = data.description || "暂无描述";
+    });
+}
+  </script>
+</body>
+</html>
